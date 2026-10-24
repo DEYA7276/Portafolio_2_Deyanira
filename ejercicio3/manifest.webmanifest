@@ -1,0 +1,21 @@
+{
+  "name": "Ejercicio 3: Notificaciones Locales PWA",
+  "short_name": "E3: Notificaciones",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#11141a",
+  "theme_color": "#151921",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

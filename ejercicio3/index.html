@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ejercicio 3: Notificaciones Push Locales | PWA</title>
+  <meta name="description"
+    content="Solicitud de permisos de notificación y disparo de notificaciones locales con Service Worker, icono y vibración.">
+  <meta name="theme-color" content="#11141a">
+
+  <!-- Manifest -->
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+
+  <!-- Tipografía Limpia -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+
+  <!-- Estilos Mate -->
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+
+<body>
+  <div class="site-layout">
+
+    <!-- Barra Superior -->
+    <header class="top-nav">
+      <div class="nav-container">
+        <div class="brand">
+          <span class="brand-badge">PWA</span>
+          <span class="brand-title">Ejercicio 3: Notificaciones Push Locales</span>
+        </div>
+
+        <div class="nav-status-group">
+          <div id="network-badge" class="status-pill online">
+            <span id="network-dot" class="dot online"></span>
+            <span id="network-text">En línea</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="page-content">
+
+      <!-- Encabezado -->
+      <div class="exercise-header">
+        <div class="badge-exercise">Práctica Individual • Notificaciones & Service Worker</div>
+        <h1 class="exercise-heading">Notificaciones Push Locales desde el Service Worker</h1>
+        <p class="exercise-desc">
+          Gestión del ciclo de vida de permisos mediante <code>Notification.requestPermission</code> y emisión de
+          notificaciones de escritorio/móvil avanzadas ejecutadas a través del Service Worker con
+          <code>self.registration.showNotification</code>, personalización de título, cuerpo, icono, tag y patrón de
+          vibración.
+        </p>
+      </div>
+
+      <!-- Disposición a 2 Columnas -->
+      <div class="notifications-grid">
+
+        <!-- Columna Izquierda: Control de Permisos y Presets -->
+        <aside class="sidebar-column">
+
+          <!-- Tarjeta 1: Estado de Permiso y Service Worker -->
+          <div class="panel-card">
+            <h2 class="panel-title">Estado del Sistema</h2>
+            <p class="panel-subtitle">Verificación de soporte y autorización del navegador</p>
+
+            <div class="status-indicator-box">
+              <span class="indicator-label">Permiso de Notificación:</span>
+              <span id="perm-status-badge" class="indicator-value default">Consultando...</span>
+            </div>
+
+            <div class="status-indicator-box">
+              <span class="indicator-label">Service Worker:</span>
+              <span id="sw-status-badge" class="indicator-value active">Iniciando...</span>
+            </div>
+
+            <div class="btn-group-vertical">
+              <button id="btn-request-perm" class="btn btn-primary" type="button">
+                <span>Solicitar Permiso</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Tarjeta 2: Presets Rápidos -->
+          <div class="panel-card">
+            <h2 class="panel-title">Plantillas Rápidas</h2>
+            <p class="panel-subtitle">Carga escenarios comunes con un solo clic</p>
+
+            <div class="presets-list">
+              <button class="preset-chip" type="button" data-preset="info">
+                <strong>Alerta del Sistema</strong>
+                <span>info-pwa</span>
+              </button>
+
+              <button class="preset-chip" type="button" data-preset="task">
+                <strong>Recordatorio de Tarea</strong>
+                <span>task-remind</span>
+              </button>
+
+              <button class="preset-chip" type="button" data-preset="security">
+                <strong>Aviso de Seguridad</strong>
+                <span>sec-audit</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Tarjeta 3: Resumen de Especificación Técnica -->
+          <div class="panel-card">
+            <h2 class="panel-title" style="font-size: 0.95rem;">Resumen Técnico</h2>
+            <ul class="clean-list" style="margin-top: 0.6rem;">
+              <li>
+                <strong>Notification API:</strong> <code>Notification.requestPermission()</code> retorna una promesa con
+                <code>granted</code>, <code>default</code> o <code>denied</code>.
+              </li>
+              <li>
+                <strong>showNotification():</strong> Ejecutado en el Service Worker para asegurar entrega nativa
+                persistente e integración con el centro de actividades del SO.
+              </li>
+              <li>
+                <strong>Vibración:</strong> Secuencia en ms (ej. <code>[200, 100, 200]</code>) interpretada por hardware
+                móvil.
+              </li>
+            </ul>
+          </div>
+
+        </aside>
+
+        <!-- Columna Derecha: Compositor, Vista Previa y Consola -->
+        <section class="main-column">
+
+          <!-- Tarjeta de Vista Previa en Vivo -->
+          <div class="panel-card">
+            <h2 class="panel-title">Vista Previa Simulada</h2>
+            <p class="panel-subtitle">Representación visual de la notificación según los parámetros actuales</p>
+
+            <div class="notification-preview-card">
+              <span id="preview-tag" class="preview-badge-tag">TAG: PWA-LOCAL</span>
+
+              <div class="preview-icon-wrapper">
+                <img id="preview-icon-img" src="./icons/icon-192.png" alt="Icono Notificación">
+              </div>
+
+              <div class="preview-content">
+                <div class="preview-header-line">
+                  <span class="preview-source">PWA • EJERCICIO 3</span>
+                  <span id="preview-timestamp" class="preview-time">Ahora</span>
+                </div>
+                <div id="preview-title" class="preview-title">Alerta de Sistema PWA</div>
+                <div id="preview-body" class="preview-body">Esta es una notificación local disparada a través del
+                  Service Worker con capacidades avanzadas.</div>
+
+                <div id="preview-actions-container" class="preview-actions-bar">
+                  <span class="preview-action-btn">Explorar</span>
+                  <span class="preview-action-btn">Descartar</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Formulario de Configuración -->
+            <form id="notification-form" onsubmit="return false;">
+              <div class="form-group">
+                <label class="form-label" for="notif-title">
+                  Título de la Notificación <span>(Requerido)</span>
+                </label>
+                <input type="text" id="notif-title" class="form-input" value="Alerta de Sistema PWA" required
+                  maxlength="60">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="notif-body">
+                  Cuerpo del Mensaje <span>(Requerido)</span>
+                </label>
+                <textarea id="notif-body" class="form-textarea" required
+                  maxlength="180">Esta es una notificación local disparada a través del Service Worker con capacidades avanzadas.</textarea>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="notif-tag">
+                    Tag / Etiqueta <span>(Agrupación)</span>
+                  </label>
+                  <input type="text" id="notif-tag" class="form-input" value="pwa-local-alert" maxlength="30">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="notif-vibration">
+                    Patrón de Vibración <span>(Móvil)</span>
+                  </label>
+                  <select id="notif-vibration" class="form-select">
+                    <option value="[200, 100, 200]">Estándar [200, 100, 200 ms]</option>
+                    <option value="[500, 200, 500]">Urgente [500, 200, 500 ms]</option>
+                    <option value="[100, 50, 100, 50, 100]">Rápido [100, 50, 100 ms]</option>
+                    <option value="[]">Sin vibración</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row" style="margin-bottom: 1.25rem;">
+                <label class="form-checkbox-label">
+                  <input type="checkbox" id="notif-require-interaction">
+                  <span>Requerir interacción (permanecer fija en pantalla)</span>
+                </label>
+
+                <label class="form-checkbox-label">
+                  <input type="checkbox" id="notif-include-actions" checked>
+                  <span>Incluir botones de acción nativos</span>
+                </label>
+              </div>
+
+              <!-- Botones de Disparo -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                <button id="btn-send-now" class="btn btn-primary" type="button">
+                  <span>Disparar Inmediatamente</span>
+                </button>
+
+                <button id="btn-send-delayed" class="btn btn-secondary" type="button">
+                  <span id="btn-delayed-text">⏱ Disparar en 5 Segundos</span>
+                </button>
+              </div>
+            </form>
+
+          </div>
+
+          <!-- Consola de Eventos en Tiempo Real -->
+          <div class="terminal-card">
+            <div class="terminal-header">
+              <span class="panel-title" style="font-size: 0.92rem; margin: 0;">Registro de Eventos del Service
+                Worker</span>
+              <button id="btn-clear-logs" class="btn-clear-log" type="button">Limpiar registro</button>
+            </div>
+
+            <div id="terminal-logs-box" class="terminal-logs">
+              <div class="log-entry">
+                <span class="log-time">[--:--:--]</span>
+                <span class="log-type info">INFO</span>
+                <span class="log-msg">Iniciando entorno de notificaciones locales de Ejercicio 3...</span>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+      </div>
+
+    </main>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-stack" aria-live="polite"></div>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div><strong>Ejercicio 3</strong> • Notificaciones Push Locales desde el Service Worker</div>
+        <div style="color: var(--text-muted); font-size: 0.78rem;">
+          Notification.requestPermission + ServiceWorkerRegistration.showNotification
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Lógica Principal -->
+  <script src="./js/script.js"></script>
+</body>
+
+</html>

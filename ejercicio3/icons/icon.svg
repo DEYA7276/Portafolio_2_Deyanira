@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="50%" stop-color="#1e1b4b" />
+      <stop offset="100%" stop-color="#090d16" />
+    </linearGradient>
+    <linearGradient id="neonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4" />
+      <stop offset="50%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#8b5cf6" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#06b6d4" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  
+  <!-- Base rounded shape -->
+  <rect width="512" height="512" rx="110" fill="url(#bgGrad)" />
+  <rect x="8" y="8" width="496" height="496" rx="102" fill="none" stroke="url(#neonGrad)" stroke-width="4" stroke-opacity="0.4" />
+  
+  <!-- Outer radar ring -->
+  <circle cx="256" cy="256" r="160" fill="none" stroke="url(#neonGrad)" stroke-width="6" stroke-dasharray="12 8" opacity="0.6" />
+  <circle cx="256" cy="256" r="110" fill="none" stroke="#38bdf8" stroke-width="4" opacity="0.4" />
+  
+  <!-- Glowing radar sweep crosshairs -->
+  <line x1="256" y1="60" x2="256" y2="452" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" opacity="0.35" />
+  <line x1="60" y1="256" x2="452" y2="256" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" opacity="0.35" />
+  
+  <!-- Center GPS Pin / Pulse Element -->
+  <g filter="url(#glow)">
+    <!-- Radar pulse wave -->
+    <circle cx="256" cy="240" r="54" fill="none" stroke="url(#accentGrad)" stroke-width="5" opacity="0.8" />
+    <!-- Location Pin body -->
+    <path d="M256 140 C206 140 166 180 166 230 C166 285 240 366 251 378 C253 381 259 381 261 378 C272 366 346 285 346 230 C346 180 306 140 256 140 Z" fill="url(#neonGrad)" />
+    <!-- Pin Center Core -->
+    <circle cx="256" cy="230" r="32" fill="#0f172a" />
+    <circle cx="256" cy="230" r="18" fill="url(#accentGrad)" />
+  </g>
+  
+  <!-- Bottom PWA badge indicator -->
+  <rect x="186" y="420" width="140" height="36" rx="18" fill="#1e293b" stroke="url(#neonGrad)" stroke-width="2" />
+  <text x="256" y="444" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="800" fill="#38bdf8" text-anchor="middle" letter-spacing="3">PWA PRO</text>
+</svg>

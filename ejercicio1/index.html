@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ejercicio 1: Permisos y Geolocalización | Portafolio PWA</title>
+  <meta name="description"
+    content="Verificación de permisos con Permissions API y despliegue de coordenadas con Geolocation API y OpenStreetMap.">
+  <meta name="theme-color" content="#11141a">
+
+  <!-- Manifest -->
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+
+  <!-- Tipografía Limpia -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+
+  <!-- Leaflet Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+  <!-- Estilos Mate -->
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+
+<body>
+  <div class="site-layout">
+
+    <!-- Barra Superior -->
+    <header class="top-nav">
+      <div class="nav-container">
+        <div class="brand">
+          <span class="brand-badge">PWA</span>
+          <span class="brand-title">Ejercicio 1: Permisos y Geolocalización</span>
+        </div>
+
+        <div class="nav-status-group">
+          <div id="network-badge" class="status-pill online">
+            <span id="network-dot" class="dot online"></span>
+            <span id="network-text">En línea</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="page-content">
+
+      <!-- Encabezado -->
+      <div class="exercise-header">
+        <div class="badge-exercise">Práctica Individual • Hardware & Sensores</div>
+        <h1 class="exercise-heading">Consulta de Permisos y Geolocalización</h1>
+        <p class="exercise-desc">
+          Verificación del estado de permisos con la Permissions API (<code>navigator.permissions.query</code>) y
+          solicitud de acceso al GPS mediante <code>navigator.geolocation.getCurrentPosition</code> con despliegue de
+          coordenadas en panel de texto y mapa interactivo.
+        </p>
+      </div>
+
+      <!-- Grid a 2 Columnas -->
+      <div class="workspace-grid">
+
+        <!-- Columna Izquierda: Permisos, Acciones y Coordenadas -->
+        <div class="workspace-sidebar">
+
+          <!-- Tarjeta 1: Permissions API -->
+          <div class="panel-card">
+            <div class="panel-card-header">
+              <div>
+                <h2 class="panel-title">Estado del Permiso</h2>
+                <p class="panel-subtitle">navigator.permissions.query({ name: 'geolocation' })</p>
+              </div>
+              <button id="btn-check-permission" class="btn-ghost" title="Reconsultar permiso">
+                Revisar
+              </button>
+            </div>
+
+            <div id="perm-status-banner" class="permission-box prompt">
+              <span id="perm-status-orb" class="permission-indicator"></span>
+              <div class="permission-text-group">
+                <div id="perm-state-text" class="permission-title">Pendiente (Prompt)</div>
+                <div id="perm-desc" class="permission-detail">
+                  El permiso aún no ha sido solicitado. El navegador pedirá confirmación al pulsar "Obtener mi
+                  ubicación".
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tarjeta 2: Acciones GPS -->
+          <div class="panel-card">
+            <h2 class="panel-title">Solicitar Ubicación</h2>
+            <p class="panel-subtitle" style="margin-bottom: 1rem;">navigator.geolocation.getCurrentPosition</p>
+
+            <div class="actions-stack">
+              <button id="btn-get-location" class="btn-solid-primary">
+                <span>📍</span> Obtener mi ubicación actual
+              </button>
+
+              <div class="actions-row">
+                <button id="btn-toggle-watch" class="btn-solid-secondary">
+                  Rastreo en vivo (watchPosition)
+                </button>
+                <label class="checkbox-label" title="Utilizar GPS de alta precisión">
+                  <input type="checkbox" id="switch-high-accuracy" checked>
+                  <span>Alta precisión</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tarjeta 3: Telemetría de Coordenadas -->
+          <div class="panel-card">
+            <h2 class="panel-title">Coordenadas Obtenidas</h2>
+            <p class="panel-subtitle" style="margin-bottom: 1rem;">Valores en texto devueltos por el sensor</p>
+
+            <div class="coords-display-grid">
+              <div class="coord-item">
+                <div class="coord-label">Latitud</div>
+                <div id="telemetry-lat" class="coord-value">--</div>
+              </div>
+
+              <div class="coord-item">
+                <div class="coord-label">Longitud</div>
+                <div id="telemetry-lng" class="coord-value">--</div>
+              </div>
+
+              <div class="coord-item">
+                <div class="coord-label">Margen de Precisión</div>
+                <div id="telemetry-acc" class="coord-value">--</div>
+              </div>
+
+              <div class="coord-item">
+                <div class="coord-label">Altitud</div>
+                <div id="telemetry-alt" class="coord-value">--</div>
+              </div>
+
+              <div class="coord-item">
+                <div class="coord-label">Velocidad</div>
+                <div id="telemetry-speed" class="coord-value">--</div>
+              </div>
+
+              <div class="coord-item">
+                <div class="coord-label">Rumbo</div>
+                <div id="telemetry-heading" class="coord-value">--</div>
+              </div>
+            </div>
+
+            <div class="timestamp-row">
+              <span class="ts-label">Última lectura:</span>
+              <span id="telemetry-time" class="ts-value">Aún sin lecturas</span>
+            </div>
+
+            <div class="actions-footer">
+              <button id="btn-copy-coords" class="btn-ghost-sm">Copiar Lat, Lng</button>
+              <a id="link-google-maps" href="#" target="_blank" rel="noopener noreferrer" class="link-external"
+                style="display: none;">
+                Ver en Google Maps ↗
+              </a>
+              <a id="link-osm" href="#" target="_blank" rel="noopener noreferrer" class="link-external"
+                style="display: none;">
+                OpenStreetMap ↗
+              </a>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Columna Derecha: Mapa Interactivo -->
+        <div class="workspace-main">
+          <div class="panel-card map-card">
+            <div class="map-card-header">
+              <div>
+                <h2 class="panel-title">Mapa Interactivo</h2>
+                <p class="panel-subtitle">Despliegue geoespacial con OpenStreetMap</p>
+              </div>
+              <button id="btn-recenter-map" class="btn-ghost" title="Centrar el mapa en la última posición">
+                Centrar en mí
+              </button>
+            </div>
+
+            <div class="map-frame">
+              <div id="map-view"></div>
+              <div id="map-floating-tip" class="map-info-tip">
+                💡 Haz clic en <strong>"Obtener mi ubicación"</strong> o toca cualquier punto del mapa para fijar
+                coordenadas.
+              </div>
+            </div>
+
+
+          </div>
+
+          <!-- Explicación Técnica -->
+          <div class="panel-card explanation-card">
+            <h3 class="panel-title" style="font-size: 0.95rem; margin-bottom: 0.5rem;">Resumen de Implementación</h3>
+            <ul class="clean-list">
+              <li>
+                <strong>Permissions API:</strong> <code>navigator.permissions.query({ name: 'geolocation' })</code>
+                verifica el permiso preventivamente sin molestar al usuario y escucha el evento <code>onchange</code>
+                reactivamente.
+              </li>
+              <li>
+                <strong>Geolocation API:</strong> <code>navigator.geolocation.getCurrentPosition()</code> adquiere
+                latitud, longitud y precisión con el chip GPS o antena del dispositivo.
+              </li>
+              <li>
+                <strong>Visualización Doble:</strong> Los datos se plasman simultáneamente en formato numérico/textual y
+                en el mapa de Leaflet con su radio de incertidumbre.
+              </li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-stack" aria-live="polite"></div>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div><strong>Ejercicio 1</strong> • Consulta de Permisos y Geolocalización</div>
+        <div style="color: var(--text-muted); font-size: 0.78rem;">
+          Permissions API + Geolocation API + Leaflet OpenStreetMap
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Lógica -->
+  <script src="./js/script.js"></script>
+</body>
+
+</html>

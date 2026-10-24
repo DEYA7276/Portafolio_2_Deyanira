@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ejercicio 2: Captura de Medios con Cámara | Portafolio PWA</title>
+  <meta name="description"
+    content="Acceso a la cámara del dispositivo con navigator.mediaDevices.getUserMedia y captura fotográfica en canvas HTML.">
+  <meta name="theme-color" content="#11141a">
+
+  <!-- Manifest -->
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+
+  <!-- Tipografía Limpia -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+
+  <!-- Estilos Mate -->
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+
+<body>
+  <div class="site-layout">
+
+    <!-- Barra Superior -->
+    <header class="top-nav">
+      <div class="nav-container">
+        <div class="brand">
+          <span class="brand-badge">PWA</span>
+          <span class="brand-title">Ejercicio 2: Captura de Cámara y Canvas</span>
+        </div>
+
+        <div class="nav-status-group">
+          <div id="network-badge" class="status-pill online">
+            <span id="network-dot" class="dot online"></span>
+            <span id="network-text">En línea</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="page-content">
+
+      <!-- Encabezado -->
+      <div class="exercise-header">
+        <div class="badge-exercise">Práctica Individual • Hardware & Medios</div>
+        <h1 class="exercise-heading">Captura de Medios con Cámara Web / Móvil</h1>
+        <p class="exercise-desc">
+          Acceso al hardware de video mediante <code>navigator.mediaDevices.getUserMedia</code>, renderizado continuo
+          del flujo en un elemento <code>&lt;video&gt;</code> y captura de instantáneas estáticas enviadas a un
+          <code>&lt;canvas&gt;</code> HTML con exportación en PNG.
+        </p>
+      </div>
+
+      <!-- Disposición a 2 Columnas -->
+      <div class="camera-workspace-grid">
+
+        <!-- Columna Izquierda: Panel de Control y Hardware -->
+        <div class="workspace-sidebar">
+
+          <!-- Tarjeta 1: Estado del Permiso de Cámara -->
+          <div class="panel-card">
+            <div class="panel-card-header">
+              <div>
+                <h2 class="panel-title">Permiso de Cámara</h2>
+                <p class="panel-subtitle">navigator.permissions.query({ name: 'camera' })</p>
+              </div>
+            </div>
+
+            <div id="camera-perm-banner" class="permission-box prompt">
+              <span id="camera-perm-orb" class="permission-indicator"></span>
+              <div class="permission-text-group">
+                <div id="camera-perm-state" class="permission-title">Pendiente (Prompt)</div>
+                <div id="camera-perm-desc" class="permission-detail">
+                  Se solicitará autorización al usuario al presionar "Encender cámara".
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tarjeta 2: Dispositivo y Disparo -->
+          <div class="panel-card">
+            <h2 class="panel-title">Controles de Captura</h2>
+            <p class="panel-subtitle" style="margin-bottom: 1rem;">navigator.mediaDevices.getUserMedia</p>
+
+            <div class="actions-stack">
+              <div>
+                <label for="select-camera-device" class="coord-label"
+                  style="display:block; margin-bottom: 4px; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Seleccionar
+                  Cámara</label>
+                <select id="select-camera-device" class="camera-select-field">
+                  <option value="">Cargando dispositivos...</option>
+                </select>
+              </div>
+
+              <!-- Botón Encender / Apagar cámara -->
+              <button id="btn-toggle-camera" class="btn-solid-primary">
+                Encender cámara
+              </button>
+
+              <!-- Botón Disparador -->
+              <button id="btn-capture-snapshot" class="btn-shutter" disabled>
+                Tomar fotografía
+              </button>
+            </div>
+          </div>
+
+          <!-- Tarjeta 3: Filtros de Procesamiento -->
+          <div class="panel-card">
+            <h2 class="panel-title">Filtros para el Canvas</h2>
+            <p class="panel-subtitle">Efectos visuales aplicados directamente en el lienzo 2D</p>
+
+            <div class="canvas-filter-bar">
+              <button class="filter-btn active" data-filter="none">Normal</button>
+              <button class="filter-btn" data-filter="grayscale">Blanco y Negro</button>
+              <button class="filter-btn" data-filter="sepia">Sepia</button>
+              <button class="filter-btn" data-filter="contrast">Contraste +</button>
+              <button class="filter-btn" data-filter="invert">Invertir</button>
+            </div>
+
+            <!-- Historial de miniaturas -->
+            <div class="snapshot-gallery-box">
+              <div
+                style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem;">
+                Capturas Recientes</div>
+              <div id="snapshot-gallery" class="gallery-grid"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Columna Derecha: Video en Vivo y Canvas -->
+        <div class="workspace-main">
+
+          <div class="media-comparison-grid">
+
+            <!-- Caja 1: Video en Vivo -->
+            <div class="media-box">
+              <div class="media-box-header">
+                <div>
+                  <h3 class="panel-title" style="font-size: 0.95rem;">Flujo de Video en Vivo</h3>
+                  <p class="panel-subtitle">&lt;video id="camera-video-feed"&gt;</p>
+                </div>
+                <span id="video-status-text" class="status-pill" style="font-size: 0.72rem;">Inactivo</span>
+              </div>
+
+              <div class="media-viewport-frame">
+                <video id="camera-video-feed" autoplay playsinline muted></video>
+
+                <div id="video-placeholder" class="media-placeholder">
+                  <span class="placeholder-icon"></span>
+                  <span class="placeholder-text">Presiona <strong>"Encender cámara"</strong> para iniciar el flujo de
+                    video en vivo del hardware.</span>
+                </div>
+              </div>
+
+              <div class="media-meta-bar">
+                <span>Resolución del sensor:</span>
+                <span id="video-resolution-text" class="meta-spec">--</span>
+              </div>
+            </div>
+
+            <!-- Caja 2: Fotografía Estática en Canvas -->
+            <div class="media-box">
+              <div class="media-box-header">
+                <div>
+                  <h3 class="panel-title" style="font-size: 0.95rem;">Fotografía Estática</h3>
+                  <p class="panel-subtitle">&lt;canvas id="snapshot-canvas"&gt;</p>
+                </div>
+                <button id="btn-clear-canvas" class="btn-ghost" title="Limpiar lienzo">Limpiar</button>
+              </div>
+
+              <div class="media-viewport-frame">
+                <canvas id="snapshot-canvas"></canvas>
+
+                <div id="canvas-placeholder" class="media-placeholder">
+                  <span class="placeholder-icon">🖼️</span>
+                  <span class="placeholder-text">Presiona <strong>"Tomar fotografía"</strong> para congelar el fotograma
+                    estático en el canvas.</span>
+                </div>
+              </div>
+
+              <div class="media-meta-bar">
+                <span>Resolución capturada:</span>
+                <span id="canvas-resolution-text" class="meta-spec">--</span>
+              </div>
+
+              <div style="margin-top: 0.85rem;">
+                <form id="download-form" action="./download.php" method="POST" style="display: none;">
+                  <input type="hidden" name="image_data" id="download-form-data">
+                </form>
+                <button id="btn-download-photo" type="button" class="btn-solid-primary" style="width: 100%;" disabled>
+                  💾 Descargar archivo
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Explicación Técnica -->
+          <div class="panel-card" style="background-color: var(--bg-card-alt);">
+            <h3 class="panel-title" style="font-size: 0.95rem; margin-bottom: 0.5rem;">Resumen de Implementación</h3>
+            <ul class="clean-list">
+              <li>
+                <strong>navigator.mediaDevices.getUserMedia:</strong> Solicita al navegador el acceso al hardware óptico
+                real (webcam o cámara trasera/frontal) mediante restricciones de video.
+              </li>
+              <li>
+                <strong>Reproducción en &lt;video&gt;:</strong> El flujo de tipo <code>MediaStream</code> se asigna a
+                <code>video.srcObject</code> y se ejecuta continuamente con <code>autoplay playsinline</code>.
+              </li>
+              <li>
+                <strong>Captura en &lt;canvas&gt;:</strong> El método
+                <code>canvasContext.drawImage(video, 0, 0, w, h)</code> congela el fotograma en un lienzo HTML del mismo
+                tamaño.
+              </li>
+              <li>
+                <strong>Exportación en PNG Nativo:</strong> Al pulsar "Descargar fotografía en PNG", se genera
+                directamente el archivo <code>foto.png</code> con codificación MIME <code>image/png</code> para abrirlo
+                al instante en Windows sin programas adicionales.
+              </li>
+            </ul>
+          </div>
+
+        </div>
+
+      </div>
+
+    </main>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-stack" aria-live="polite"></div>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div><strong>Ejercicio 2</strong> • Captura de Medios con Cámara Web / Móvil</div>
+        <div style="color: var(--text-muted); font-size: 0.78rem;">
+          navigator.mediaDevices.getUserMedia + HTML5 &lt;video&gt; + &lt;canvas&gt;
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Lógica -->
+  <script src="./js/script.js?v=5.0"></script>
+</body>
+
+</html>

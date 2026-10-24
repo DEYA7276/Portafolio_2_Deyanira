@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ejercicio 4: Persistencia Asíncrona con IndexedDB | PWA</title>
+  <meta name="description"
+    content="Apertura y creación de un Object Store en IndexedDB con operaciones CRUD completas y funcionamiento 100% offline.">
+  <meta name="theme-color" content="#11141a">
+
+  <!-- Manifest -->
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+
+  <!-- Tipografía Limpia -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+
+  <!-- Estilos Mate -->
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+
+<body>
+  <div class="site-layout">
+
+    <!-- Barra Superior -->
+    <header class="top-nav">
+      <div class="nav-container">
+        <div class="brand">
+          <span class="brand-badge">PWA</span>
+          <span class="brand-title">Ejercicio 4: Persistencia Asíncrona con IndexedDB</span>
+        </div>
+
+        <div class="status-pill online" id="network-badge">
+          <span class="dot online" id="network-dot"></span>
+          <span id="network-text">En línea</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="page-content">
+
+      <!-- Encabezado -->
+      <div class="exercise-header">
+        <div class="badge-exercise">Práctica Individual • Persistencia Offline & Bases de Datos</div>
+        <h1 class="exercise-heading">Persistencia de Datos Asíncrona con IndexedDB</h1>
+        <p class="exercise-desc">
+          Apertura y configuración de un <code>IDBDatabase</code> mediante <code>indexedDB.open</code> con creación
+          reactiva de un <code>IDBObjectStore</code> en el evento <code>upgradeneeded</code>. Implementación de una
+          interfaz reactiva para insertar, consultar, actualizar y eliminar registros de forma asíncrona sin depender de
+          conexión a internet.
+        </p>
+      </div>
+
+      <!-- Barra de Métricas de la BD -->
+      <div class="db-metrics-bar">
+        <div class="metric-card">
+          <div>
+            <div class="metric-label">Base de Datos</div>
+            <div class="metric-val" id="metric-db-name">PWA_OfflineDB</div>
+          </div>
+          <span style="font-size: 1.2rem; color: var(--text-muted);"></span>
+        </div>
+
+        <div class="metric-card">
+          <div>
+            <div class="metric-label">Object Store</div>
+            <div class="metric-val" id="metric-store-name">registros_local</div>
+          </div>
+          <span style="font-size: 1.2rem; color: var(--text-muted);"></span>
+        </div>
+
+        <div class="metric-card">
+          <div>
+            <div class="metric-label">Registros Guardados</div>
+            <div class="metric-val" id="metric-records-count">0</div>
+          </div>
+          <span style="font-size: 1.2rem; color: var(--text-muted);"></span>
+        </div>
+
+        <div class="metric-card">
+          <div>
+            <div class="metric-label">Espacio Utilizado</div>
+            <div class="metric-val" id="metric-storage-used">Calculando...</div>
+          </div>
+          <span style="font-size: 1.2rem; color: var(--text-muted);"></span>
+        </div>
+      </div>
+
+      <!-- Grid Principal a 2 Columnas -->
+      <div class="idb-workspace-grid">
+
+        <!-- Columna Izquierda: Formulario CRUD y Herramientas -->
+        <aside class="sidebar-column">
+
+          <!-- Tarjeta Formulario -->
+          <div class="panel-card">
+            <h2 class="panel-title" id="form-heading">Nuevo Registro</h2>
+            <p class="panel-subtitle">Inserta o edita información en el almacén local</p>
+
+            <form id="record-form" onsubmit="return false;">
+              <input type="hidden" id="record-id">
+
+              <div class="form-group">
+                <label class="form-label" for="record-title">Título del Registro</label>
+                <input type="text" id="record-title" class="form-input" placeholder="Ej. Lectura de Acelerómetro"
+                  required maxlength="70">
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="record-category">Categoría</label>
+                  <select id="record-category" class="form-select">
+                    <option value="hardware">Hardware</option>
+                    <option value="permisos">Permisos</option>
+                    <option value="sensores">Sensores</option>
+                    <option value="pwa">PWA</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="record-priority">Prioridad</label>
+                  <select id="record-priority" class="form-select">
+                    <option value="media">Media</option>
+                    <option value="alta">Alta</option>
+                    <option value="baja">Baja</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="record-notes">Descripción / Contenido</label>
+                <textarea id="record-notes" class="form-textarea"
+                  placeholder="Escribe los datos estructurados que deseas persistir offline..." required
+                  maxlength="250"></textarea>
+              </div>
+
+              <div class="btn-group">
+                <button type="submit" id="btn-save-record" class="btn btn-primary" style="flex: 1;">
+                  <span>Guardar Registro</span>
+                </button>
+                <button type="button" id="btn-reset-form" class="btn btn-secondary">
+                  <span>Limpiar</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Tarjeta Acciones Rápidas -->
+          <div class="panel-card">
+            <h2 class="panel-title" style="font-size: 0.95rem;">Acciones Masivas</h2>
+            <p class="panel-subtitle">Generación y mantenimiento del almacenamiento</p>
+
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+              <button type="button" id="btn-seed-samples" class="btn btn-secondary" style="width: 100%;">
+                <span>Cargar 3 Registros de Ejemplo</span>
+              </button>
+              <button type="button" id="btn-clear-db" class="btn btn-danger-outline" style="width: 100%;">
+                <span>Vaciar Almacén (Clear Store)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Tarjeta Especificación Técnica -->
+          <div class="panel-card">
+            <h2 class="panel-title" style="font-size: 0.95rem;">Especificación de la API</h2>
+            <ul class="clean-list" style="margin-top: 0.6rem; font-size: 0.8rem;">
+              <li>
+                <strong>indexedDB.open(name, v):</strong> Inicializa la conexión transaccional asíncrona.
+              </li>
+              <li>
+                <strong>onupgradeneeded:</strong> Genera el <code>IDBObjectStore</code> con <code>keyPath: 'id'</code> y
+                sus índices de búsqueda.
+              </li>
+              <li>
+                <strong>IDBTransaction:</strong> Modo <code>readwrite</code> para operaciones ACID que persisten sin
+                internet.
+              </li>
+            </ul>
+          </div>
+
+        </aside>
+
+        <!-- Columna Derecha: Explorador de Registros y Consola -->
+        <section class="main-column">
+
+          <div class="panel-card">
+            <!-- Barra de Filtros y Búsqueda -->
+            <div class="toolbar-row">
+              <div class="search-box">
+                <input type="text" id="search-query" class="form-input"
+                  placeholder="Filtrar registros por título o contenido...">
+              </div>
+
+              <select id="filter-category" class="form-select filter-select">
+                <option value="all">Todas las categorías</option>
+                <option value="hardware">Hardware</option>
+                <option value="permisos">Permisos</option>
+                <option value="sensores">Sensores</option>
+                <option value="pwa">PWA</option>
+              </select>
+
+              <select id="sort-order" class="form-select filter-select">
+                <option value="newest">Más recientes</option>
+                <option value="oldest">Más antiguos</option>
+                <option value="title">Por título (A-Z)</option>
+              </select>
+            </div>
+
+            <!-- Contenedor Dinámico de Registros -->
+            <div id="records-container" class="records-container">
+              <!-- Se renderiza dinámicamente con JS -->
+            </div>
+          </div>
+
+          <!-- Consola de Transacciones IndexedDB -->
+          <div class="terminal-card">
+            <div class="terminal-header">
+              <span class="panel-title" style="font-size: 0.92rem; margin: 0;">Registro de Transacciones Asíncronas (IDB
+                Console)</span>
+              <button id="btn-clear-logs" class="btn btn-secondary btn-sm" type="button">Limpiar registro</button>
+            </div>
+            <div id="terminal-logs-box" class="terminal-logs">
+              <div class="log-entry">
+                <span class="log-time">[--:--:--]</span>
+                <span class="log-type info">INFO</span>
+                <span class="log-msg">Iniciando gestor de IndexedDB...</span>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+      </div>
+
+    </main>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-stack" aria-live="polite"></div>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div><strong>Ejercicio 4</strong> • Persistencia de Datos Asíncrona con IndexedDB</div>
+        <div style="color: var(--text-muted); font-size: 0.78rem;">
+          window.indexedDB + IDBObjectStore + IDBTransaction (CRUD Offline)
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Lógica Principal -->
+  <script src="./js/script.js"></script>
+</body>
+
+</html>

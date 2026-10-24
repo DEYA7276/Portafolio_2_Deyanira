@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ejercicio 5: Caché Dinámica y Fallback Offline | PWA</title>
+  <meta name="description"
+    content="Estrategia Network-First con persistencia automática en IndexedDB y Cache API para disponibilidad offline de datos REST.">
+  <meta name="theme-color" content="#11141a">
+
+  <!-- Manifest -->
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+
+  <!-- Tipografía Limpia -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+
+  <!-- Estilos Mate -->
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+
+<body>
+  <div class="site-layout">
+
+    <!-- Barra Superior -->
+    <header class="top-nav">
+      <div class="nav-container">
+        <div class="brand">
+          <span class="brand-badge">PWA</span>
+          <span class="brand-title">Ejercicio 5: Caché Dinámica y Fallback Offline</span>
+        </div>
+
+        <div class="nav-status-group">
+          <div class="status-pill online" id="network-badge">
+            <span class="dot online" id="network-dot"></span>
+            <span id="network-text">En línea</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="page-content">
+
+      <!-- Encabezado -->
+      <div class="exercise-header">
+        <div class="badge-exercise">Práctica Individual • Red & Estrategias de Caché</div>
+        <h1 class="exercise-heading">Estrategia de Caché Dinámica con Fallback a IndexedDB / Network-First</h1>
+        <p class="exercise-desc">
+          Consumo de una API REST remota mediante <code>fetch</code> con estrategia <strong>Network-First</strong>: la
+          aplicación intenta obtener la versión más reciente desde la red; al recibir el JSON, guarda automáticamente
+          una copia local sincronizada en <strong>IndexedDB</strong> y <strong>Cache API</strong>. Si el dispositivo
+          pierde la conexión, la interfaz detecta la desconexión y renderiza inmediatamente el último snapshot
+          almacenado.
+        </p>
+      </div>
+
+      <!-- Barra de Telemetría -->
+      <div class="telemetry-row">
+        <div class="telemetry-card">
+          <div class="telemetry-info">
+            <span class="telemetry-label">Origen de Datos Actual</span>
+            <span class="telemetry-value" id="source-badge">
+              <span class="telemetry-tag initial">Esperando Solicitud</span>
+            </span>
+          </div>
+          <span style="font-size: 1.3rem;"></span>
+        </div>
+
+        <div class="telemetry-card">
+          <div class="telemetry-info">
+            <span class="telemetry-label">Última Sincronización</span>
+            <span class="telemetry-value" id="last-sync-time">Ninguna</span>
+          </div>
+          <span style="font-size: 1.3rem;">⏱</span>
+        </div>
+
+        <div class="telemetry-card">
+          <div class="telemetry-info">
+            <span class="telemetry-label">Artículos Cargados</span>
+            <span class="telemetry-value" id="items-count">0 elementos</span>
+          </div>
+          <span style="font-size: 1.3rem;"></span>
+        </div>
+
+        <div class="telemetry-card">
+          <div class="telemetry-info">
+            <span class="telemetry-label">Estrategia Activa</span>
+            <span class="telemetry-value" style="font-size: 0.92rem; color: var(--color-primary-text);">Network-First +
+              IDB</span>
+          </div>
+          <span style="font-size: 1.3rem;"></span>
+        </div>
+      </div>
+
+      <!-- Barra de Controles de Sincronización -->
+      <div class="control-panel">
+        <div class="controls-left">
+          <button id="btn-fetch-network" class="btn btn-primary" type="button">
+            <span>Sincronizar desde API REST</span>
+          </button>
+
+          <button id="btn-toggle-offline-sim" class="btn btn-warning-outline" type="button">
+            <span id="btn-toggle-offline-text">Simular Desconexión de Red</span>
+          </button>
+        </div>
+
+        <div class="controls-right">
+          <button id="btn-inspect-json" class="btn btn-secondary" type="button" disabled>
+            <span>Ver JSON</span>
+          </button>
+
+          <button id="btn-clear-cache" class="btn btn-danger-outline" type="button">
+            <span>Limpiar Almacén Local</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Cuadrícula de Artículos Obtenidos del API -->
+      <section>
+        <div id="items-container" class="api-items-grid">
+          <!-- Renderizado dinámicamente con JS -->
+        </div>
+      </section>
+
+      <!-- Panel Inferior a 2 Columnas: Flujo de la Estrategia y Terminal -->
+      <div class="lower-grid">
+
+        <!-- Columna Izquierda: Arquitectura Network-First -->
+        <div class="panel-card">
+          <h2 class="panel-title">Flujo de la Estrategia Network-First</h2>
+          <p class="panel-subtitle">Comportamiento secuencial del ciclo de petición y almacenamiento</p>
+
+          <div class="flow-diagram">
+            <div class="flow-step">
+              <span class="flow-step-num">1</span>
+              <div class="flow-step-text">
+                <strong>Intento de Red Primario:</strong> Se emite una llamada <code>fetch()</code> al endpoint REST de
+                producción.
+              </div>
+            </div>
+
+            <div class="flow-step">
+              <span class="flow-step-num">2</span>
+              <div class="flow-step-text">
+                <strong>Respaldo Reactivo:</strong> Al recibir la respuesta HTTP 200, el JSON se deserializa y se
+                almacena en el <code>IDBObjectStore ('api_posts')</code> con timestamp.
+              </div>
+            </div>
+
+            <div class="flow-step">
+              <span class="flow-step-num">3</span>
+              <div class="flow-step-text">
+                <strong>Fallback Transparente:</strong> Si falla la red (timeout, offline o error 5xx), la promesa cae
+                en <code>catch()</code> y lee automáticamente el snapshot de IndexedDB sin romper la UI.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Columna Derecha: Consola de Eventos y Red -->
+        <div class="panel-card">
+          <div class="terminal-header">
+            <span class="panel-title" style="font-size: 0.92rem; margin: 0;">Registro de Transacciones de Red y
+              Caché</span>
+            <button id="btn-clear-terminal" class="btn btn-secondary"
+              style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" type="button">Limpiar</button>
+          </div>
+
+          <div id="terminal-logs-box" class="terminal-logs">
+            <div class="log-entry">
+              <span class="log-time">[--:--:--]</span>
+              <span class="log-type info">INIT</span>
+              <span class="log-msg">Iniciando arquitectura de caché dinámica de Ejercicio 5...</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+
+    <!-- Modal Visor JSON Crudo -->
+    <div id="json-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="panel-title" style="margin: 0; font-size: 0.95rem;">Snapshot JSON Almacenado en IndexedDB</span>
+          <button id="btn-close-modal" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.8rem;"
+            type="button">✕ Cerrar</button>
+        </div>
+        <div class="modal-body">
+          <pre id="modal-json-content" class="modal-pre"></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-stack" aria-live="polite"></div>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div><strong>Ejercicio 5</strong> • Estrategia de Caché Dinámica con Fallback a IndexedDB / Network-First</div>
+        <div style="color: var(--text-muted); font-size: 0.78rem;">
+          Fetch API + Network-First Strategy + IndexedDB Persistence + Cache API
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Lógica Principal -->
+  <script src="./js/script.js"></script>
+</body>
+
+</html>

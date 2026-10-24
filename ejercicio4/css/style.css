@@ -1,0 +1,711 @@
+/* ==========================================================================
+   EJERCICIO 4: PERSISTENCIA ASÍNCRONA CON INDEXEDDB
+   Estilo visual: Mate sobrio, oscuro neutro, elegante y funcional
+   ========================================================================== */
+
+:root {
+  --bg-canvas: #11141a;
+  --bg-surface: #151921;
+  --bg-card: #181c24;
+  --bg-card-hover: #1d222c;
+  --bg-inset: #12151c;
+  
+  --border-subtle: #242a36;
+  --border-strong: #323b4c;
+  --border-focus: #4b6a96;
+
+  --text-title: #f1f3f7;
+  --text-body: #c3c8d4;
+  --text-muted: #858e9f;
+
+  --color-primary: #345680;
+  --color-primary-hover: #3d6394;
+  --color-primary-subtle: #1c2a3d;
+  --color-primary-text: #96b9e3;
+
+  --color-success: #356859;
+  --color-success-subtle: #192b24;
+  --color-success-text: #8ed0b7;
+
+  --color-warning: #875c24;
+  --color-warning-subtle: #2b2012;
+  --color-warning-text: #e6b87d;
+
+  --color-danger: #7a2d2d;
+  --color-danger-subtle: #2b1616;
+  --color-danger-text: #e59393;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', Consolas, 'SF Mono', monospace;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-canvas);
+  color: var(--text-body);
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+.site-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==========================================================================
+   Barra Superior
+   ========================================================================== */
+.top-nav {
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.brand-badge {
+  background-color: var(--color-primary);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.05em;
+}
+
+.brand-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-title);
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+}
+
+.status-pill.online {
+  border-color: #213a2e;
+  color: var(--color-success-text);
+  background-color: var(--color-success-subtle);
+}
+
+.status-pill.offline {
+  border-color: #3b2222;
+  color: var(--color-danger-text);
+  background-color: var(--color-danger-subtle);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--text-muted);
+}
+
+.dot.online {
+  background-color: #4ade80;
+}
+
+.dot.offline {
+  background-color: #f87171;
+}
+
+/* ==========================================================================
+   Contenido Principal
+   ========================================================================== */
+.page-content {
+  flex: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.75rem 1.25rem 3rem;
+  width: 100%;
+}
+
+.exercise-header {
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 1.25rem;
+}
+
+.badge-exercise {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-primary-text);
+  background-color: var(--color-primary-subtle);
+  border: 1px solid #233a57;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.5rem;
+}
+
+.exercise-heading {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-title);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.4rem;
+}
+
+.exercise-desc {
+  color: var(--text-muted);
+  max-width: 880px;
+  font-size: 0.92rem;
+}
+
+.exercise-desc code {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-title);
+  padding: 0.1rem 0.35rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+}
+
+/* ==========================================================================
+   Barra de Métricas y Estado de la BD
+   ========================================================================== */
+.db-metrics-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.metric-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.8rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.metric-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.metric-val {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-title);
+  font-family: var(--font-mono);
+}
+
+/* ==========================================================================
+   Disposición a 2 Columnas: Formulario CRUD y Lista de Registros
+   ========================================================================== */
+.idb-workspace-grid {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 960px) {
+  .idb-workspace-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.panel-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-title);
+  margin-bottom: 0.25rem;
+}
+
+.panel-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+/* ==========================================================================
+   Formulario CRUD
+   ========================================================================== */
+.form-group {
+  margin-bottom: 0.85rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-body);
+  margin-bottom: 0.35rem;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.55rem 0.75rem;
+  color: var(--text-title);
+  font-family: var(--font-sans);
+  font-size: 0.86rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  border-color: var(--border-focus);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+/* ==========================================================================
+   Botones
+   ========================================================================== */
+.btn-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.6rem 0.95rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  border: 1px solid transparent;
+  font-family: inherit;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: #ffffff;
+  border-color: #3e6899;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.btn-secondary {
+  background-color: var(--bg-surface);
+  color: var(--text-body);
+  border-color: var(--border-subtle);
+}
+
+.btn-secondary:hover {
+  background-color: #1a1e27;
+  color: var(--text-title);
+  border-color: var(--border-strong);
+}
+
+.btn-danger-outline {
+  background-color: transparent;
+  color: var(--color-danger-text);
+  border-color: #401f1f;
+}
+
+.btn-danger-outline:hover {
+  background-color: var(--color-danger-subtle);
+  border-color: var(--color-danger);
+}
+
+.btn-sm {
+  padding: 0.3rem 0.55rem;
+  font-size: 0.78rem;
+}
+
+/* ==========================================================================
+   Barra de Filtros y Búsqueda
+   ========================================================================== */
+.toolbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.search-box {
+  flex: 1;
+  min-width: 200px;
+}
+
+.filter-select {
+  width: auto;
+  min-width: 140px;
+}
+
+/* ==========================================================================
+   Lista de Registros Guardados
+   ========================================================================== */
+.records-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.record-item {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.record-item:hover {
+  border-color: var(--border-strong);
+  background-color: var(--bg-card-hover);
+}
+
+.record-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.record-title {
+  font-size: 0.94rem;
+  font-weight: 600;
+  color: var(--text-title);
+}
+
+.badge-tag {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge-tag.hardware {
+  background-color: #172a3a;
+  color: #8bb5e8;
+  border: 1px solid #233e57;
+}
+
+.badge-tag.permisos {
+  background-color: #2e2617;
+  color: #e5bd7c;
+  border: 1px solid #47391d;
+}
+
+.badge-tag.sensores {
+  background-color: #1a2e24;
+  color: #8ed0b7;
+  border: 1px solid #274737;
+}
+
+.badge-tag.pwa {
+  background-color: #271a33;
+  color: #cb9bf5;
+  border: 1px solid #3f2757;
+}
+
+.badge-priority {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.1rem 0.35rem;
+  border-radius: var(--radius-sm);
+}
+
+.badge-priority.alta {
+  background-color: var(--color-danger-subtle);
+  color: var(--color-danger-text);
+  border: 1px solid #4a1d1d;
+}
+
+.badge-priority.media {
+  background-color: var(--color-warning-subtle);
+  color: var(--color-warning-text);
+  border: 1px solid #47391d;
+}
+
+.badge-priority.baja {
+  background-color: var(--color-success-subtle);
+  color: var(--color-success-text);
+  border: 1px solid #234737;
+}
+
+.record-body {
+  font-size: 0.84rem;
+  color: var(--text-body);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.record-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid #1a1e27;
+}
+
+.record-meta {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.record-actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+/* Estado Vacío */
+.empty-state {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  background-color: var(--bg-inset);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.empty-state-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-muted);
+}
+
+.empty-state-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-title);
+  margin-bottom: 0.3rem;
+}
+
+.empty-state-desc {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  max-width: 320px;
+  margin: 0 auto 1rem;
+}
+
+/* ==========================================================================
+   Consola de Operaciones IDB
+   ========================================================================== */
+.terminal-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.terminal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.terminal-logs {
+  background-color: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.85rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-body);
+  max-height: 180px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.log-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  line-height: 1.4;
+}
+
+.log-time {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.log-type {
+  font-weight: 600;
+  flex-shrink: 0;
+  padding: 0 0.3rem;
+  border-radius: 2px;
+  font-size: 0.7rem;
+}
+
+.log-type.create {
+  background-color: #182b20;
+  color: #8ed0b7;
+}
+
+.log-type.read {
+  background-color: #172433;
+  color: #79a6d2;
+}
+
+.log-type.update {
+  background-color: #2b2318;
+  color: #f2c079;
+}
+
+.log-type.delete {
+  background-color: #301717;
+  color: #f28b8b;
+}
+
+.log-type.info {
+  background-color: #222733;
+  color: #a0aec0;
+}
+
+/* ==========================================================================
+   Toasts UI
+   ========================================================================== */
+.toast-stack {
+  position: fixed;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.toast {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  color: var(--text-title);
+  padding: 0.75rem 1.1rem;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  font-size: 0.84rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.toast.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast.toast-success {
+  border-left: 3px solid var(--color-success-text);
+}
+
+.toast.toast-danger {
+  border-left: 3px solid var(--color-danger-text);
+}
+
+.toast.toast-info {
+  border-left: 3px solid var(--color-primary-text);
+}
+
+/* ==========================================================================
+   Footer
+   ========================================================================== */
+.site-footer {
+  border-top: 1px solid var(--border-subtle);
+  background-color: var(--bg-surface);
+  padding: 1.25rem;
+  margin-top: auto;
+}
+
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
